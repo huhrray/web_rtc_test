@@ -4,6 +4,19 @@ body {
 
 video {
   max-width: 100%;
-  width: 520px;
-  border: 1px solid maroon;
+  width: 50rem;
+  height: 50rem;
+  margin: 1rem;
+}
+
+.video-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }

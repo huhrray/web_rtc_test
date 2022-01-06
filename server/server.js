@@ -1,75 +1,94 @@
-
-const os = require('os');
-const nodeStatic = require('node-static');
-const https = require('https');
+let express = require("express");
+let https = require("https");
+let app = express();
 const fs = require('fs');
-let fileServer = new (nodeStatic.Server)();
-
-
+let cors = require("cors");
+app.use(cors());
+app.get("/", (req,res)=>{
+    res.send({ express: 'YOUR EXPRESS BACKEND IS CONNECTED TO REACT' })
+})
 const options = {
-  key: fs.readFileSync('./private.pem'),
-  cert: fs.readFileSync('./public.pem')
+    key: fs.readFileSync('./private.pem'),
+    cert: fs.readFileSync('./public.pem'),
+    rejectUnauthorized: false,
+    requestCert: true,
+    agent: false
 };
-const app = https.createServer(options, function (req, res) {
-  fileServer.serve(req, res);
-
-}).listen(5000);
-let socketIO = require('socket.io')(app,  { cors: { origin: "*" } });
-let io =  socketIO.listen(app);
-console.log('Started chating server...');
-
-io.on('connection', function (socket) {
-  // convenience function to log server messages on the client
-  function log() {
-    var array = ['Message from server:'];
-    array.push.apply(array, arguments);
-    socket.emit('log', array);
-  }
-
-  socket.on('message', function (message) {
-    log('Client said: ', message);
-    // for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit('message', message);
-  });
-
-  socket.on('create or join', function (room) {
-    log('Received request to create or join room ' + room);
-
-    var clientsInRoom = io.sockets.adapter.rooms[room];
-    console.log(clientsInRoom,"클라이언트")
-    var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
-    log('Room ' + room + ' now has ' + numClients + ' client(s)');
-
-    if (numClients === 0) {
-      socket.join(room);
-      log('Client ID ' + socket.id + ' created room ' + room);
-      socket.emit('created', room, socket.id);
-      // socket.emit('join', room)
-
-    } else if (numClients === 1) {
-      log('Client ID ' + socket.id + ' joined room ' + room);
-      io.sockets.in(room).emit('join', room);
-      socket.join(room);
-      socket.emit('joined', room, socket.id);
-      io.sockets.in(room).emit('ready');
-    } else { // max two clients
-      socket.emit('full', room);
+let server = https.createServer(options, app);
+let socketio = require("socket.io");
+let io = socketio(server, {
+    cors: {
+        origin :"*",
+        credentials :true   
     }
-  });
+});
 
-  socket.on('ipaddr', function () {
-    var ifaces = os.networkInterfaces();
-    for (var dev in ifaces) {
-      ifaces[dev].forEach(function (details) {
-        if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
-          socket.emit('ipaddr', details.address);
+const PORT = process.env.PORT || 5000;
+
+let users = {};
+
+let socketToRoom = {};
+
+const maximum = 2;
+
+io.on("connection", (socket) => {
+    socket.on("join_room", (data) => {
+        if (users[data.room]) {
+            const length = users[data.room].length;
+            if (length === maximum) {
+                socket.to(socket.id).emit("room_full");
+                return;
+            }
+            users[data.room].push({ id: socket.id });
+        } else {
+            users[data.room] = [{ id: socket.id }];
         }
-      });
-    }
-  });
+        socketToRoom[socket.id] = data.room;
 
-  socket.on('bye', function () {
-    console.log('received bye');
-  });
+        socket.join(data.room);
+        console.log(`FROM SERVER::::[${socketToRoom[socket.id]}]: ${socket.id} enter`);
 
+        const usersInThisRoom = users[data.room].filter(
+            (user) => user.id !== socket.id
+        );
+
+        console.log("FROM SERVER::::",usersInThisRoom);
+
+        io.sockets.to(socket.id).emit("all_users", usersInThisRoom);
+    });
+
+    socket.on("offer", (sdp) => {
+        console.log("FROM SERVER::::"+"offer: " + socket.id);
+        socket.broadcast.emit("getOffer", sdp);
+    });
+
+    socket.on("answer", (sdp) => {
+        console.log("FROM SERVER::::"+"answer: " + socket.id);
+        socket.broadcast.emit("getAnswer", sdp);
+    });
+
+    socket.on("candidate", (candidate) => {
+        console.log("FROM SERVER::::"+"candidate: " + socket.id);
+        socket.broadcast.emit("getCandidate", candidate);
+    });
+
+    socket.on("disconnect", () => {
+        console.log(`[${socketToRoom[socket.id]}]: ${socket.id} exit`);
+        const roomID = socketToRoom[socket.id];
+        let room = users[roomID];
+        if (room) {
+            room = room.filter((user) => user.id !== socket.id);
+            users[roomID] = room;
+            if (room.length === 0) {
+                delete users[roomID];
+                return;
+            }
+        }
+        socket.broadcast.to(room).emit("user_exit", { id: socket.id });
+        console.log("FROM SERVER::::"+users);
+    });
+});
+
+server.listen(PORT,"192.168.0.2", () => {
+    console.log(`server running on ${PORT}`, server.address());
 });
