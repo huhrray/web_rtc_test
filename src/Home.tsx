@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { VideoContainer } from "./components/VideoContainer"
+import { VoiceContainer } from "./components/VoiceContainer";
 
 
 const pc_config = {
@@ -16,6 +17,8 @@ const pc_config = {
     ],
 };
 const SOCKET_SERVER_URL = "wss://192.168.0.2:5000"
+const IO = io(SOCKET_SERVER_URL);
+const PC = new RTCPeerConnection(pc_config);
 
 export const Home = () => {
     const socketRef = useRef<Socket>();//
@@ -43,7 +46,7 @@ export const Home = () => {
                 }
             };
             pcRef.current.oniceconnectionstatechange = (e) => {
-                console.log(e);
+                // console.log(e);
             };
             pcRef.current.ontrack = (ev) => {
                 console.log("add remotetrack success");
@@ -92,8 +95,8 @@ export const Home = () => {
     };
 
     useEffect(() => {
-        socketRef.current = io(SOCKET_SERVER_URL);
-        pcRef.current = new RTCPeerConnection(pc_config);
+        socketRef.current = IO;
+        pcRef.current = PC;
 
         socketRef.current.on("all_users", (allUsers: Array<{ id: string }>) => {
             if (allUsers.length > 0) {
@@ -122,6 +125,12 @@ export const Home = () => {
                 console.log("candidate add success");
             }
         );
+        socketRef.current.on("room_full", (sdp: RTCSessionDescription) => {
+            console.log("get answer");
+            if (!pcRef.current) return;
+            pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
+            //console.log(sdp);
+        });
 
         setVideoTracks();
 
@@ -133,12 +142,16 @@ export const Home = () => {
                 pcRef.current.close();
             }
         };
+
     }, []);
 
     return (
         <div className="home">
             <h1>Realtime communication with WebRTC</h1>
-            {VideoContainer(localVideoRef, remoteVideoRef)}
+            <div className="content-container">
+                {VideoContainer(localVideoRef, remoteVideoRef)}
+                {VoiceContainer(IO, PC)}
+            </div>
         </div>)
 }
 

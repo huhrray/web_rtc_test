@@ -4,11 +4,13 @@ body {
 
 video {
   max-width: 100%;
-  width: 50rem;
-  height: 50rem;
+  width: 600px;
+  height: 600px;
   margin: 1rem;
 }
-
+.content-container {
+  display: flex;
+}
 .video-container {
   display: flex;
   justify-content: space-around;
@@ -19,4 +21,93 @@ video {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+/* 채팅창  */
+.chatlog-container {
+  width: 500px;
+  border: 1px #128c7e solid;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* 채팅 입력창 */
+.chat-input-container {
+  width: inherit;
+  height: 10%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 15px;
+}
+
+.chat-input-container input {
+  width: 70%;
+  font-size: 15px;
+}
+
+.chat-input-container div {
+  width: 10%;
+}
+
+.chat-input-container button {
+  width: 10%;
+}
+
+/* 채팅창 채팅텍스트  */
+
+.chatlog {
+  width: 95%;
+  height: 90%;
+  /* border: solid 1px #128c7e; */
+  overflow: auto;
+  border-radius: 10px;
+}
+
+.my-text {
+  margin-right: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.my-text p {
+  background-color: blanchedalmond;
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+
+.other-text {
+  margin-left: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.other-text p {
+  background-color: aliceblue;
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+.my-voice-text p {
+  background-color: burlywood;
+}
+.other-voice-text p {
+  background-color: cornflowerblue;
+}
+
+/* 채팅창 내 알림 */
+.notice {
+  font-style: italic;
+  font-size: 0.8rem;
+  background-color: #ece5dd;
+  color: gray;
+  border-radius: 10px;
+  margin: 5px 0;
+  text-align: center !important;
 }
