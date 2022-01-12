@@ -23,7 +23,7 @@ let io = socketio(server, {
     }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 7000;
 
 let users = {};
 let userCount = 1
@@ -31,9 +31,6 @@ let user_obj = {};
 let socketToRoom = {};
 const maximum = 2;
 
-function update_list() {
-    io.emit( "update_users", user_obj);
-}
 // 채팅메세지 시간 구하기
 function getTime() {
     const now = new Date();
@@ -49,7 +46,7 @@ io.on("connection", (socket) => {
     io.to(socket.id).emit('default_name',name);
     socket.emit("default_name",name)
     io.sockets.emit( "notice", `${name} 입장하셨습니다.`);
-    update_list();
+    // update_list();
 
     socket.on("join_room", (data) => {
         if (users[data.room]) {
@@ -107,8 +104,8 @@ io.on("connection", (socket) => {
         console.log(users);
     });
 
-    
     const msgTime = getTime();
+
     socket.on( "sendMsg", ( msg ) =>{
         const data = { msg, msgTime};
         io.emit("newMsg", data)

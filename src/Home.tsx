@@ -3,20 +3,19 @@ import { io, Socket } from "socket.io-client";
 import { VideoContainer } from "./components/VideoContainer"
 import { VoiceContainer } from "./components/VoiceContainer";
 
-
 const pc_config = {
     iceServers: [
         // {
-        //   urls: 'stun:[STUN_IP]:[PORT]',
-        //   'credentials': '[YOR CREDENTIALS]',
-        //   'username': '[USERNAME]'
-        // },
+        //     "urls": ["turn:175.197.203.14:3478?transport=tcp"],
+        //     "username": "seyhuh",
+        //     "credential": "1234"
+        // }
         {
             urls: "stun:stun.l.google.com:19302",
         },
     ],
 };
-const SOCKET_SERVER_URL = "wss://192.168.0.2:5000"
+const SOCKET_SERVER_URL = "wss://192.168.0.2:7000"
 const IO = io(SOCKET_SERVER_URL);
 const PC = new RTCPeerConnection(pc_config);
 
@@ -49,7 +48,6 @@ export const Home = () => {
                 // console.log(e);
             };
             pcRef.current.ontrack = (ev) => {
-                console.log("add remotetrack success");
                 if (remoteVideoRef.current) {
                     remoteVideoRef.current.srcObject = ev.streams[0];
                 }
@@ -69,7 +67,7 @@ export const Home = () => {
             const sdp = await pcRef.current.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true,
-            });
+            })
             await pcRef.current.setLocalDescription(new RTCSessionDescription(sdp));
             socketRef.current.emit("offer", sdp);
         } catch (e) {
@@ -80,6 +78,7 @@ export const Home = () => {
     const createAnswer = async (sdp: RTCSessionDescription) => {
         if (!(pcRef.current && socketRef.current)) return;
         try {
+            // console.log(pcRef.current.getTransceivers()[1].setCodecPreferences(), "뭡니까")
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
             console.log("answer set remote description success");
             const mySdp = await pcRef.current.createAnswer({
